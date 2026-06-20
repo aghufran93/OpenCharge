@@ -4,361 +4,298 @@
 
 # Document Information
 
-| Item              | Details                                       |
-| ----------------- | --------------------------------------------- |
-| **Project**       | OpenCharge                                    |
-| **Document ID**   | OC-SDS-001                                    |
+| Item | Details |
+|------|---------|
+| **Project** | OpenCharge |
+| **Document ID** | OC-SDS-001 |
 | **Document Name** | OpenCharge Core Software Design Specification |
-| **Version**       | 1.0                                           |
-| **Status**        | Draft                                         |
-| **Author**        | Ahmed Ghufran                                 |
-| **Role**          | Founder & Lead System Architect               |
-| **License**       | Apache License 2.0                            |
-| **Repository**    | https://github.com/aghufran93/OpenCharge      |
-| **Created**       | June 2026                                     |
-| **Last Updated**  | June 2026                                     |
+| **Version** | 1.0 |
+| **Status** | Draft |
+| **Author** | Ahmed Ghufran |
+| **Role** | Founder & Lead System Architect |
+| **License** | Apache License 2.0 |
+| **Repository** | https://github.com/aghufran93/OpenCharge |
+| **Created** | June 2026 |
+| **Last Updated** | June 2026 |
 
 ---
 
 # Revision History
 
-| Version | Date      | Author        | Description   |
-| ------- | --------- | ------------- | ------------- |
-| 1.0     | June 2026 | Ahmed Ghufran | Initial Draft |
+| Version | Date | Author | Description |
+|----------|------|--------|-------------|
+| 1.0 | June 2026 | Ahmed Ghufran | Initial Design Specification |
+
+---
+
+# Table of Contents
+
+1. Purpose
+2. Scope
+3. References
+4. Definitions & Acronyms
+5. Design Principles
+6. System Context
+7. Architectural Layers
+8. Core Responsibilities
+9. Core Domain Model
+10. Component Relationships
+11. State Model
+12. Event Architecture
+13. Fault Architecture
+14. Smart Charging Architecture
+15. Dynamic Load Balancing
+16. Power Management
+17. External Interfaces
+18. Design Constraints
+19. Non-Functional Requirements
+20. Future Expansion
+21. Implementation Roadmap
+22. Traceability Matrix
 
 ---
 
 # 1. Purpose
 
-This document defines the software design of the OpenCharge Core.
+This Software Design Specification (SDS) defines the architecture, responsibilities, interfaces, and behaviour of the OpenCharge Core.
 
-The OpenCharge Core contains all business logic and remains independent of:
+The OpenCharge Core is the central software component responsible for managing all business logic of an AC EV Charger while remaining independent from hardware, communication protocols, and user interfaces.
 
-* Desktop GUI
-* Raspberry Pi HMI
-* STM32 Firmware
-* OCPP Client
-* IEC 61851 Hardware
-* Hardware Drivers
-
-The objective is to provide a stable, maintainable, and testable foundation for the OpenCharge platform.
+This document serves as the master design reference for all software implementation activities within the OpenCharge project.
 
 ---
 
-# 2. Design Principles
+# 2. Scope
 
-The OpenCharge Core follows:
+The OpenCharge Core includes:
 
-* Clean Architecture
-* SOLID Principles
-* Separation of Concerns
-* Dependency Injection
-* Hardware Abstraction
-* Event-Driven Architecture
-* Test-Driven Development
+- Charger Management
+- Connector Management
+- Charging Sessions
+- State Machine
+- Event Management
+- Fault Management
+- Vehicle Model
+- Meter Model
+- Authorization Model
+- Smart Charging
+- Dynamic Load Balancing
+- Power Management
 
----
+The Core intentionally excludes:
 
-# 3. Core Responsibilities
+- Desktop GUI
+- Raspberry Pi HMI
+- STM32 Firmware
+- IEC 61851 Hardware Control
+- OCPP Protocol
+- Modbus Drivers
+- GPIO Drivers
+- UART Drivers
+- CAN Drivers
 
-The OpenCharge Core is responsible for:
-
-* Charger lifecycle management
-* Connector management
-* Charging session management
-* State transitions
-* Fault management
-* Event publishing
-* Meter data modelling
-* Authorization modelling
-
-The Core must never communicate directly with hardware.
-
----
-
-# 4. Core Domain Model
-
-```text
-                           Charger
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-   StateMachine          Connector           ChargingSession
-        │                     │                     │
-        │                     │                Authorization
-        │                     │                     │
-        │                     │                 Vehicle
-        │                     │                     │
-        │                     │                  Meter
-        │
-        ▼
-    EventBus
-        │
-        ▼
-   FaultManager
-```
-
-Every object has a single responsibility.
+These systems interact with the Core through well-defined interfaces.
 
 ---
 
-# 5. Core Components
+# 3. References
 
-## 5.1 Charger
+The OpenCharge Core is designed in accordance with the following standards and specifications.
 
-The Charger is the root aggregate of the OpenCharge Core.
+## International Standards
 
-### Responsibilities
+- IEC 61851 Electric Vehicle Conductive Charging System
+- IEC 62196 Type 2 Connectors
+- ISO 15118 (Future Support)
 
-* Own connectors
-* Own state machine
-* Manage charging sessions
-* Publish events
-* Coordinate authorization
-* Coordinate meter updates
-* Expose charger information
+## Communication Standards
 
-### Relationships
+- OCPP 1.6J
+- OCPP 2.0.1
+- Modbus RTU
+- Modbus TCP
+- CAN Bus
 
-* Owns one or more Connectors
-* Owns one StateMachine
-* Owns one active ChargingSession per Connector
+## Software Standards
 
----
-
-## 5.2 Connector
-
-Represents one physical charging outlet.
-
-### Responsibilities
-
-* Plug detection
-* Lock control
-* Contactor control
-* IEC 61851 state
-* Connector availability
+- Python 3.12+
+- PEP8
+- SOLID Principles
+- Clean Architecture
+- Semantic Versioning
 
 ---
 
-## 5.3 StateMachine
+# 4. Definitions & Acronyms
 
-Controls every charger state transition.
-
-The StateMachine validates transitions and guarantees that invalid charger behaviour cannot occur.
-
-Example:
-
-```text
-OFFLINE
-
-↓
-
-BOOTING
-
-↓
-
-INITIALIZING
-
-↓
-
-AVAILABLE
-
-↓
-
-PREPARING
-
-↓
-
-CHARGING
-
-↓
-
-FINISHING
-
-↓
-
-AVAILABLE
-```
+| Term | Description |
+|------|-------------|
+| EV | Electric Vehicle |
+| EVSE | Electric Vehicle Supply Equipment |
+| CP | Control Pilot |
+| PP | Proximity Pilot |
+| OCPP | Open Charge Point Protocol |
+| DLB | Dynamic Load Balancing |
+| HMI | Human Machine Interface |
+| HAL | Hardware Abstraction Layer |
+| RFID | Radio Frequency Identification |
+| GUI | Graphical User Interface |
+| PWM | Pulse Width Modulation |
+| AC | Alternating Current |
+| DC | Direct Current |
 
 ---
 
-## 5.4 ChargingSession
+# 5. Design Principles
 
-Represents one complete charging transaction.
+The OpenCharge Core follows the following engineering principles.
 
-This object must support:
+## Clean Architecture
 
-* OCPP 1.6J
-* OCPP 2.0.1
-* RFID
-* QR Code
-* Plug & Charge (Future)
-* Billing
-* Reporting
-
-### Proposed Attributes
-
-* Session ID
-* Connector ID
-* Authorization ID
-* User ID
-* Vehicle ID
-* Transaction ID
-* Start Time
-* Stop Time
-* Duration
-* Energy Delivered
-* Tariff
-* Cost
-* Currency
-* Stop Reason
-* Session Status
+Business logic shall remain independent from frameworks and hardware.
 
 ---
 
-## 5.5 Vehicle
+## SOLID Principles
 
-Represents the connected electric vehicle.
+The software shall follow all SOLID principles.
 
-### Proposed Attributes
-
-* VIN
-* Plug Status
-* IEC 61851 State
-* Requested Current
-* Maximum Current
-* Battery Capacity
-* State of Charge (Future)
+- Single Responsibility Principle
+- Open Closed Principle
+- Liskov Substitution Principle
+- Interface Segregation Principle
+- Dependency Inversion Principle
 
 ---
 
-## 5.6 Meter
+## Hardware Independence
 
-Represents electrical measurements.
+The Core shall never directly access hardware peripherals.
 
-### Proposed Attributes
-
-* Voltage
-* Current
-* Power
-* Energy
-* Frequency
-* Power Factor
-* Temperature
-* Timestamp
+Hardware access shall be performed exclusively through the Hardware Abstraction Layer (HAL).
 
 ---
 
-## 5.7 EventBus
+## Protocol Independence
 
-Provides communication between software modules.
+The Core shall not depend on:
 
-Example events:
+- OCPP
+- IEC61851
+- Modbus
+- CAN
 
-* Vehicle Connected
-* Vehicle Disconnected
-* Charging Started
-* Charging Stopped
-* Fault Raised
-* Fault Cleared
-* RFID Authorized
-* Meter Updated
-* OCPP Connected
-
-The EventBus removes direct dependencies between modules.
+These protocols depend on the Core.
 
 ---
 
-## 5.8 FaultManager
+## Event Driven Architecture
 
-Responsible for tracking charger faults.
-
-Each fault contains:
-
-* Fault Code
-* Severity
-* Source
-* Timestamp
-* Recovery Status
-* Acknowledgement Status
+Software components communicate through events instead of direct dependencies whenever practical.
 
 ---
 
-# 6. Design Rules
+## Testability
 
-The Core:
-
-* Must not depend on GUI frameworks.
-* Must not depend on hardware drivers.
-* Must not depend on OCPP libraries.
-* Must not depend on STM32 firmware.
-
-External systems depend on the Core—not the other way around.
+Every component shall be independently unit testable.
 
 ---
 
-# 7. External Interfaces
+## Extensibility
 
-The Core exposes interfaces to:
-
-* Desktop Simulator
-* IEC 61851 Controller
-* OCPP Client
-* Raspberry Pi HMI
-* STM32 Firmware
-* Future REST API
-
-Each interface communicates only through well-defined methods and events.
+New charging standards and features shall be added without redesigning the Core.
 
 ---
 
-# 8. Future Expansion
+# 6. System Context
 
-The design supports future features without major architectural changes.
+The OpenCharge Core is positioned between hardware and external software systems.
 
-Planned capabilities include:
+                    External Systems
 
-* Multi-connector chargers
-* Dynamic Load Balancing
-* Smart Charging
-* OCPP 2.0.1
-* ISO 15118
-* Plug & Charge
-* Local Authorization
-* Remote Diagnostics
-* Mobile Applications
+        Mobile App
+        OCPP Backend
+        Desktop Simulator
+        Raspberry Pi HMI
+
+                    │
+
+            OpenCharge Core
+
+                    │
+
+      IEC61851 Controller
+
+      Hardware Abstraction Layer
+
+                    │
+
+           STM32 Hardware
+
+                    │
+
+     Contactor
+     Lock
+     Meter
+     LEDs
+     Sensors
+
+The OpenCharge Core serves as the single source of business logic for the complete charging platform.
 
 ---
 
-# 9. Design Goals
+# 7. Architectural Layers
 
-The OpenCharge Core is designed to be:
+OpenCharge follows a layered architecture.
 
-* Modular
-* Testable
-* Hardware Independent
-* Protocol Independent
-* Scalable
-* Commercial Grade
-* Maintainable
-* Extensible
++-----------------------------------------------------------+
+| Presentation Layer                                        |
+| Desktop GUI • Raspberry Pi HMI • REST API                 |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+| Application Layer                                         |
+| Authorization • Sessions • Configuration                  |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+| Core Domain                                               |
+| Charger • Connector • Session • Vehicle • Meter           |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+| Smart Charging Layer                                      |
+| Smart Charging • Load Manager • Power Manager             |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+| Hardware Abstraction Layer                                |
+| IEC61851 • Meter Drivers • GPIO • UART                    |
++-----------------------------------------------------------+
+
++-----------------------------------------------------------+
+| Hardware                                                  |
+| STM32 • Raspberry Pi • Contactor • Type 2 Socket          |
++-----------------------------------------------------------+
 
 ---
 
-# 10. Next Implementation Order
+# 8. Core Responsibilities
 
-The implementation will proceed as follows:
+The OpenCharge Core shall be responsible for:
 
-1. Global Enumerations
-2. Finite State Machine
-3. Connector
-4. Charger
-5. Charging Session
-6. Vehicle
-7. Meter
-8. Event Bus
-9. Fault Manager
-10. Unit Tests
-11. Desktop Simulator Integration
+- Managing charger lifecycle
+- Managing connector state
+- Managing charging sessions
+- Maintaining state machine
+- Publishing events
+- Recording faults
+- Meter abstraction
+- Vehicle abstraction
+- Authorization abstraction
+- Smart Charging
+- Dynamic Load Balancing
+- Power Limitation
+- Configuration Management
 
-Each component will be fully documented, implemented, and tested before progressing to the next.
+The Core shall never directly manipulate hardware resources.
