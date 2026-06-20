@@ -1254,3 +1254,1295 @@ The charger shall always move to a safe state before attempting recovery.
 
 ```
 ```
+
+
+````markdown
+# 17. Smart Charging Architecture
+
+## Overview
+
+The Smart Charging Engine is responsible for determining the optimal charging current and power delivered to the connected electric vehicle.
+
+The Smart Charging Engine shall operate independently of the communication protocol.
+
+Whether charging commands originate from:
+
+- Local Configuration
+- RFID
+- QR Code
+- OCPP
+- Mobile Application
+- REST API
+
+all charging decisions shall be evaluated by the Smart Charging Engine.
+
+---
+
+## Responsibilities
+
+The Smart Charging Engine shall:
+
+- Calculate charging current
+- Calculate charging power
+- Apply charging profiles
+- Apply user limits
+- Apply site limits
+- Apply utility restrictions
+- Apply Dynamic Load Balancing results
+- Apply Time-of-Use schedules
+- Apply Configuration Manager settings
+
+---
+
+## Inputs
+
+The Smart Charging Engine receives:
+
+- Vehicle Requested Current
+- Charger Maximum Current
+- Connector Rating
+- Site Power Limit
+- Load Manager Allocation
+- Power Manager Limit
+- OCPP Charging Profile
+- Local Charging Profile
+- Configuration Parameters
+
+---
+
+## Outputs
+
+The Smart Charging Engine produces:
+
+- Target Current (A)
+- Target Power (kW)
+- IEC61851 PWM Duty Cycle
+
+---
+
+## Smart Charging Flow
+
+Vehicle Connected
+
+↓
+
+Authorization Successful
+
+↓
+
+Charging Session Created
+
+↓
+
+Smart Charging Engine
+
+↓
+
+Load Manager
+
+↓
+
+Power Manager
+
+↓
+
+IEC61851 Controller
+
+↓
+
+PWM Generated
+
+↓
+
+Charging Starts
+
+---
+
+# 18. Dynamic Load Balancing
+
+## Overview
+
+Dynamic Load Balancing (DLB) ensures that multiple chargers operate within the electrical capacity of a site.
+
+The objective is to maximize charging performance while preventing overload of electrical infrastructure.
+
+---
+
+## Responsibilities
+
+The Load Manager shall:
+
+- Monitor site capacity
+- Monitor charger demand
+- Allocate available current
+- Prevent overload
+- Support multiple chargers
+- Support priority charging
+
+---
+
+## Site Architecture
+
+```text
+                  Utility Grid
+
+                       │
+
+                Main Breaker
+
+                       │
+
+                Main Energy Meter
+
+                       │
+
+                Load Manager
+
+      ┌──────────┬──────────┬──────────┐
+
+      ▼          ▼          ▼
+
+ Charger 1   Charger 2   Charger 3
+```
+
+---
+
+## Example
+
+Site Capacity
+
+160 A
+
+Current Building Load
+
+90 A
+
+Available for EV Charging
+
+70 A
+
+Requested
+
+32 A
+
+32 A
+
+32 A
+
+Allocated
+
+24 A
+
+23 A
+
+23 A
+
+No breaker trips.
+
+---
+
+## Future Features
+
+- Phase Balancing
+- Building Energy Management
+- External Modbus Meter
+- OCPP Site Controller
+- Cluster Charging
+
+---
+
+# 19. Power Management
+
+## Overview
+
+The Power Manager ensures that charging power never exceeds configured or calculated limits.
+
+Unlike the Smart Charging Engine, which calculates the desired charging current, the Power Manager enforces operational limits.
+
+---
+
+## Responsibilities
+
+- Maximum Current
+- Maximum Power
+- Phase Current
+- Grid Limit
+- Thermal Derating
+- Utility Restrictions
+- Emergency Power Reduction
+
+---
+
+## Example
+
+Vehicle Requests
+
+32 A
+
+↓
+
+Building Limit
+
+20 A
+
+↓
+
+Power Manager
+
+↓
+
+Output
+
+20 A
+
+---
+
+## Thermal Protection
+
+When charger temperature exceeds configured thresholds, the Power Manager shall reduce charging current.
+
+Example
+
+65°C
+
+↓
+
+Current Reduced
+
+32 A → 24 A
+
+↓
+
+Temperature Stabilized
+
+---
+
+# 20. Configuration Management
+
+## Overview
+
+The Configuration Manager is the single source of truth for all configurable parameters.
+
+No component shall maintain independent configuration.
+
+---
+
+## Responsibilities
+
+- Load Configuration
+- Save Configuration
+- Validate Configuration
+- Apply Defaults
+- Version Configuration
+- Import
+- Export
+- Factory Reset
+
+---
+
+## Configuration Categories
+
+### Charger
+
+- Charger ID
+- Name
+- Manufacturer
+- Firmware
+- Serial Number
+
+### Connector
+
+- Connector Count
+- Connector Type
+- Lock Enabled
+- Maximum Current
+
+### Electrical
+
+- Rated Voltage
+- Rated Current
+- Maximum Power
+- RCD Settings
+
+### Smart Charging
+
+- Default Current
+- Maximum Current
+- Charging Profile
+
+### Dynamic Load Balancing
+
+- Enabled
+- Site Capacity
+- Priority
+
+### OCPP
+
+- Server URL
+- Charge Point ID
+- Heartbeat
+- Meter Interval
+
+### Network
+
+- Ethernet
+- Wi-Fi
+- DHCP
+- Static IP
+- DNS
+- NTP
+
+### Security
+
+- Certificates
+- API Keys
+- Local Users
+- Passwords
+
+### User Interface
+
+- Language
+- Brightness
+- Theme
+- QR Display
+
+### Logging
+
+- Log Level
+- Debug
+- Remote Logging
+
+---
+
+## Storage
+
+Initially
+
+JSON Configuration
+
+Future
+
+SQLite
+
+Encrypted Secure Storage
+
+---
+
+# 21. Charging Profiles
+
+The Smart Charging Engine shall support Charging Profiles.
+
+Charging Profiles define how charging current changes over time.
+
+---
+
+## Supported Sources
+
+- Local Configuration
+- OCPP Smart Charging
+- Mobile Application
+- Utility
+
+---
+
+## Example
+
+18:00
+
+16 A
+
+↓
+
+22:00
+
+32 A
+
+↓
+
+06:00
+
+Stop
+
+---
+
+# 22. Future Energy Management
+
+OpenCharge shall support future energy management capabilities.
+
+Examples
+
+- Solar Charging
+- Battery Storage
+- Home Energy Management
+- Building Energy Management
+- Utility Demand Response
+
+---
+
+## Solar Charging Example
+
+Solar Production
+
+8 kW
+
+↓
+
+House Load
+
+2 kW
+
+↓
+
+Available
+
+6 kW
+
+↓
+
+EV Charging
+
+6 kW
+
+---
+
+# 23. Multi-Charger Coordination
+
+Future versions of OpenCharge shall support charger clustering.
+
+Capabilities
+
+- Master Charger
+- Satellite Chargers
+- Shared Site Capacity
+- Central Load Balancing
+- OCPP Site Controller
+
+---
+
+## Design Goal
+
+One software architecture shall support:
+
+- Home Charger
+- Office Charger
+- Apartment Charger
+- Public Charger
+- Fleet Charger
+- Charging Hub
+
+without architectural redesign.
+````
+
+
+# 24. Role-Based Access Control (RBAC)
+
+## Overview
+
+The OpenCharge platform shall implement Role-Based Access Control (RBAC) to ensure that users can only access features and configuration appropriate to their assigned role.
+
+RBAC shall be enforced consistently across:
+
+- Desktop Simulator
+- Raspberry Pi HMI
+- Local Web Interface
+- REST API
+- OCPP Remote Operations
+- Future Mobile Applications
+
+All privileged operations shall require authentication and authorization.
+
+---
+
+## Supported Roles
+
+### 1. Guest
+
+Purpose
+
+- View charger status only
+
+Permissions
+
+- View charger availability
+- View charging status
+- View connector status
+
+Restrictions
+
+- No configuration
+- No charging control
+- No diagnostics
+
+---
+
+### 2. Driver (End User)
+
+Purpose
+
+Charge an electric vehicle.
+
+Permissions
+
+- Start Charging
+- Stop Charging
+- RFID Authentication
+- QR Charging
+- View Session Information
+
+Restrictions
+
+- No charger configuration
+- No diagnostics
+- No firmware update
+
+---
+
+### 3. Installer
+
+Purpose
+
+Commission a newly installed charger.
+
+Permissions
+
+- Configure network
+- Configure charger ID
+- Configure connector ratings
+- Configure electrical parameters
+- Configure OCPP server
+
+Restrictions
+
+- No firmware development
+- No service diagnostics
+- No security management
+
+---
+
+### 4. Service Engineer
+
+Purpose
+
+Maintain and troubleshoot chargers.
+
+Permissions
+
+- Diagnostics
+- View Logs
+- Fault Reset
+- Test Contactor
+- Test Lock
+- Test LEDs
+- Test IEC61851
+- Calibration
+
+Restrictions
+
+- Cannot modify billing
+- Cannot modify user accounts
+
+---
+
+### 5. Operator (CPO)
+
+Purpose
+
+Operate charging infrastructure.
+
+Permissions
+
+- Remote Start
+- Remote Stop
+- Enable Charger
+- Disable Charger
+- Manage Charging Profiles
+- Configure Smart Charging
+- Configure Dynamic Load Balancing
+
+Restrictions
+
+- No firmware modification
+
+---
+
+### 6. Administrator
+
+Purpose
+
+Manage complete charger configuration.
+
+Permissions
+
+- Full Configuration
+- User Management
+- Security Configuration
+- Network Configuration
+- Firmware Upgrade
+- Certificate Management
+- Factory Reset
+
+Restrictions
+
+None
+
+---
+
+### 7. Developer
+
+Purpose
+
+Development and testing.
+
+Permissions
+
+- Debug Mode
+- Simulation
+- Internal Logs
+- Test Commands
+- Engineering Features
+
+Restrictions
+
+Disabled in production firmware.
+
+---
+
+# Permission Matrix
+
+| Feature | Guest | Driver | Installer | Service | Operator | Admin | Developer |
+|----------|:-----:|:------:|:----------:|:--------:|:--------:|:-----:|:---------:|
+| View Status | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Start Charging | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Stop Charging | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Configure Network | ✗ | ✗ | ✓ | ✗ | ✗ | ✓ | ✓ |
+| Configure OCPP | ✗ | ✗ | ✓ | ✗ | ✓ | ✓ | ✓ |
+| Diagnostics | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
+| Firmware Update | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Factory Reset | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Debug Mode | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+
+---
+
+## Audit Logging
+
+All privileged operations shall be recorded.
+
+Each audit record shall include:
+
+- Timestamp
+- User ID
+- User Role
+- Action
+- Target Component
+- Previous Value
+- New Value
+- Result
+- IP Address (where applicable)
+
+Example
+
+2026-07-01 14:20:10
+
+Administrator
+
+Changed
+
+Maximum Current
+
+32 A → 25 A
+
+Result
+
+Success
+
+---
+
+## Security Principles
+
+The OpenCharge platform shall follow these principles:
+
+- Least Privilege
+- Separation of Duties
+- Secure by Default
+- Auditability
+- Traceability
+
+Unauthorized access shall never modify charger configuration or safety-related parameters.
+
+
+
+# 26. Future Enhancements
+
+The following capabilities are outside the scope of Version 1.0 but have been considered during the architectural design.
+
+Future enhancements shall be implemented without requiring significant redesign of the OpenCharge Core.
+
+## Enterprise Services
+
+- User Management
+- Audit Logging
+- Diagnostics Manager
+- Health Monitoring
+- Licensing Manager
+- Certificate Manager
+- OTA Update Manager
+
+## Energy Management
+
+- Solar Charging
+- Battery Storage Integration
+- Home Energy Management System (HEMS)
+- Building Energy Management System (BEMS)
+- Utility Demand Response
+- Vehicle-to-Grid (V2G)
+- Vehicle-to-Home (V2H)
+
+## Connectivity
+
+- MQTT
+- OCPI
+- ISO 15118 Plug & Charge
+- REST API
+- GraphQL API
+
+## Deployment
+
+- Multi-Charger Clustering
+- Central Site Controller
+- Cloud Synchronization
+- Edge Computing
+
+## Product Editions
+
+- Community
+- Home
+- Business
+- Enterprise
+- Industrial
+
+
+
+
+
+
+```markdown
+# 24. External Interfaces
+
+## Overview
+
+The OpenCharge Core communicates with external systems exclusively through well-defined interfaces.
+
+External systems shall not directly manipulate internal Core objects.
+
+The Core remains independent of communication protocols, hardware implementations, and user interface technologies.
+
+---
+
+## Supported Interfaces
+
+### Desktop Simulator
+
+Purpose
+
+Development, testing, debugging and simulation.
+
+Capabilities
+
+- Charger Simulation
+- Vehicle Simulation
+- Event Monitoring
+- Fault Injection
+- Meter Simulation
+- Configuration
+
+---
+
+### Raspberry Pi HMI
+
+Purpose
+
+Local charger operation.
+
+Capabilities
+
+- Status Display
+- User Authentication
+- Session Monitoring
+- Configuration
+- Diagnostics
+
+---
+
+### STM32 Firmware
+
+Purpose
+
+Real-time hardware control.
+
+Responsibilities
+
+- GPIO
+- PWM
+- ADC
+- UART
+- Lock Control
+- Contactor Control
+- CP Measurement
+- PP Detection
+
+---
+
+### IEC 61851 Controller
+
+Purpose
+
+Charging protocol implementation.
+
+Responsibilities
+
+- CP State Detection
+- PWM Generation
+- Duty Cycle Control
+- Safety Monitoring
+
+---
+
+### OCPP Client
+
+Purpose
+
+Communication with Central Management System.
+
+Supported Versions
+
+- OCPP 1.6J
+- OCPP 2.0.1
+
+Responsibilities
+
+- Boot Notification
+- Authorization
+- Status Notification
+- Transactions
+- Meter Values
+- Smart Charging
+
+---
+
+### REST API (Future)
+
+Purpose
+
+External integrations.
+
+Future Applications
+
+- Mobile Applications
+- Fleet Management
+- Building Management
+- Energy Management
+
+---
+
+# 25. Design Constraints
+
+The following constraints shall be observed throughout the OpenCharge project.
+
+---
+
+## Hardware Independence
+
+Business logic shall never directly communicate with hardware.
+
+---
+
+## Protocol Independence
+
+The Core shall not depend on:
+
+- OCPP
+- IEC 61851
+- Modbus
+- CAN
+- MQTT
+
+Protocols depend on the Core.
+
+---
+
+## Platform Independence
+
+The Core shall execute without modification on:
+
+- Windows
+- Linux
+- macOS
+- Raspberry Pi
+
+---
+
+## Configuration First
+
+Operational parameters shall never be hardcoded.
+
+All configurable values shall be managed by the Configuration Manager.
+
+---
+
+## Security by Design
+
+Authentication and authorization shall be considered in every subsystem.
+
+---
+
+## Safety First
+
+Whenever uncertainty exists,
+
+the charger shall enter a safe state.
+
+Safety always takes precedence over availability.
+
+---
+
+## Testability
+
+Every component shall support unit testing.
+
+Simulation shall be possible without physical hardware.
+
+---
+
+## Scalability
+
+The architecture shall support:
+
+- Single Connector Chargers
+- Dual Connector Chargers
+- Multi-Connector Chargers
+- Charging Hubs
+
+without redesign.
+
+---
+
+# 26. Non-Functional Requirements
+
+## Performance
+
+- Startup Time < 10 seconds
+- State Transition < 100 ms
+- Authorization Response < 2 seconds
+- Charging Start < 5 seconds after authorization
+
+---
+
+## Reliability
+
+- Automatic recovery where possible
+- Fault isolation
+- Graceful shutdown
+- Watchdog compatibility
+
+---
+
+## Maintainability
+
+- Modular architecture
+- Clear interfaces
+- Comprehensive documentation
+- High code readability
+
+---
+
+## Security
+
+- RBAC
+- Secure configuration
+- TLS support
+- Certificate management
+- Audit readiness
+
+---
+
+## Portability
+
+The Core shall remain independent of:
+
+- Operating System
+- GUI Framework
+- Hardware Platform
+
+---
+
+# 27. Product Editions
+
+The OpenCharge architecture shall support multiple product editions from a common codebase.
+
+---
+
+## Community Edition
+
+Target
+
+Open-source development and education.
+
+Features
+
+- Single Connector
+- IEC 61851
+- OCPP
+- RFID
+- Desktop Simulator
+
+---
+
+## Home Edition
+
+Target
+
+Residential charging.
+
+Additional Features
+
+- Smart Charging
+- Charging Scheduler
+- Solar Ready
+
+---
+
+## Business Edition
+
+Target
+
+Commercial buildings, offices and hotels.
+
+Additional Features
+
+- Dynamic Load Balancing
+- Multiple Users
+- Reporting
+- Smart Charging Profiles
+
+---
+
+## Enterprise Edition
+
+Target
+
+Charging Point Operators (CPOs), apartment complexes and fleet operators.
+
+Additional Features
+
+- RBAC
+- Advanced Configuration
+- Diagnostics
+- Multi-Charger Coordination
+- Central Management
+
+---
+
+## Industrial Edition
+
+Target
+
+Utility companies, depots and large charging infrastructure.
+
+Additional Features
+
+- SCADA Integration
+- MQTT
+- Advanced Energy Management
+- Utility Demand Response
+- High Availability
+
+---
+
+# 28. Future Enhancements
+
+The following capabilities are outside the scope of Version 1.0 but have been considered during architectural design.
+
+Future enhancements shall be implemented without significant redesign.
+
+---
+
+## Enterprise Services
+
+- User Management
+- Audit Logging
+- Diagnostics Manager
+- Health Monitor
+- OTA Updates
+- Certificate Manager
+- Licensing Manager
+
+---
+
+## Smart Energy
+
+- Solar Charging
+- Battery Storage
+- Home Energy Management System (HEMS)
+- Building Energy Management System (BEMS)
+- Vehicle-to-Grid (V2G)
+- Vehicle-to-Home (V2H)
+
+---
+
+## Connectivity
+
+- MQTT
+- OCPI
+- REST API
+- GraphQL API
+- ISO 15118 Plug & Charge
+
+---
+
+## Deployment
+
+- Multi-Charger Clustering
+- Edge Computing
+- Cloud Synchronization
+- Central Site Controller
+
+---
+
+# 29. Implementation Roadmap
+
+The OpenCharge implementation shall follow the sequence below.
+
+## Phase 1
+
+Foundation
+
+- Documentation
+- Architecture
+- Standards
+
+---
+
+## Phase 2
+
+Core Domain
+
+- Enums
+- State Machine
+- Charger
+- Connector
+- Charging Session
+- Vehicle
+- Meter
+- Event Bus
+- Fault Manager
+- Configuration Manager
+
+---
+
+## Phase 3
+
+Desktop Simulator
+
+- GUI
+- Simulator
+- Event Monitor
+- Virtual Vehicle
+- Virtual Meter
+
+---
+
+## Phase 4
+
+Communication
+
+- IEC 61851
+- OCPP 1.6J
+- OCPP 2.0.1
+
+---
+
+## Phase 5
+
+Energy Management
+
+- Smart Charging
+- Dynamic Load Balancing
+- Power Management
+
+---
+
+## Phase 6
+
+Firmware
+
+- STM32
+- HAL
+- Drivers
+
+---
+
+## Phase 7
+
+Hardware
+
+- KiCad
+- Schematics
+- PCB
+- BOM
+
+---
+
+## Phase 8
+
+System Integration
+
+- Desktop
+- Firmware
+- Hardware
+- OCPP
+- Validation
+
+---
+
+# 30. Traceability Matrix
+
+| Requirement | Design | Implementation |
+|-------------|--------|----------------|
+| Charger Management | Charger | charger.py |
+| Connector Management | Connector | connector.py |
+| State Management | State Machine | state_machine.py |
+| Charging Transactions | Charging Session | charging_session.py |
+| Vehicle Model | Vehicle | vehicle.py |
+| Meter Model | Meter | meter.py |
+| Fault Handling | Fault Manager | fault_manager.py |
+| Event Handling | Event Bus | event_bus.py |
+| Authorization | Authorization | authorization.py |
+| Smart Charging | Smart Charging Engine | smart_charging.py |
+| Load Balancing | Load Manager | load_manager.py |
+| Power Limitation | Power Manager | power_manager.py |
+| Configuration | Configuration Manager | configuration_manager.py |
+
+---
+
+# 31. Conclusion
+
+The OpenCharge Core provides a modular, scalable and hardware-independent software foundation for the OpenCharge platform.
+
+The architecture has been designed to support:
+
+- Commercial AC EV Chargers
+- Residential Chargers
+- Fleet Chargers
+- Apartment Installations
+- Public Charging Infrastructure
+- Future Smart Energy Systems
+
+without requiring architectural redesign.
+
+The principles defined in this document shall guide all future implementation activities to ensure that OpenCharge remains maintainable, extensible and suitable for commercial deployment.
+
+---
+
+**End of Document**
+```
+
