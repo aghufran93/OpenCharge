@@ -1,16 +1,10 @@
 """
-OpenCharge
-==========
+OpenCharge Core — Domain Enumerations.
 
-File:
-    enums.py
+Global enumerations shared across the Desktop Simulator, OpenCharge Core,
+IEC 61851 implementation, OCPP client, Raspberry Pi HMI, and STM32 firmware.
 
-Description:
-    Global enumerations used throughout the OpenCharge platform.
-
-These enums define the common language shared by the Desktop Simulator,
-OpenCharge Core, IEC 61851 implementation, OCPP client, Raspberry Pi HMI,
-and STM32 firmware.
+These enums form the common vocabulary of the entire platform.
 
 Author:
     Ahmed Ghufran
@@ -28,13 +22,27 @@ from enum import Enum, IntEnum, auto
 
 
 class ChargerState(Enum):
-    """Overall charger operating state."""
+    """
+    Overall charger operating state.
+
+    Follows the lifecycle defined in OC-SDS-001 §13:
+
+        OFFLINE → BOOTING → INITIALIZING → AVAILABLE
+            → OCCUPIED → AUTHORIZING → AUTHORIZED
+            → PREPARING → CHARGING
+            → SUSPENDED_EV / SUSPENDED_EVSE
+            → FINISHING → AVAILABLE
+
+    Any state may transition to FAULTED.
+    """
 
     OFFLINE = auto()
     BOOTING = auto()
     INITIALIZING = auto()
     AVAILABLE = auto()
     OCCUPIED = auto()
+    AUTHORIZING = auto()
+    AUTHORIZED = auto()
     PREPARING = auto()
     CHARGING = auto()
     SUSPENDED_EV = auto()
@@ -50,7 +58,7 @@ class ChargerState(Enum):
 
 
 class ConnectorType(Enum):
-    """Physical connector types."""
+    """Physical connector types supported by OpenCharge."""
 
     TYPE1 = auto()
     TYPE2_SOCKET = auto()
@@ -61,7 +69,7 @@ class ConnectorType(Enum):
 
 
 class ConnectorStatus(Enum):
-    """Current connector status."""
+    """Logical status of a single charging connector."""
 
     AVAILABLE = auto()
     PLUG_CONNECTED = auto()
@@ -78,14 +86,14 @@ class ConnectorStatus(Enum):
 
 class IEC61851State(Enum):
     """
-    IEC 61851 Control Pilot States.
+    IEC 61851-1 Control Pilot states.
 
-    A : No vehicle connected
-    B : Vehicle connected
-    C : Charging
-    D : Charging with ventilation
-    E : Error
-    F : Fault
+    A — No vehicle connected         (12 V)
+    B — Vehicle connected, not ready  (+9 V)
+    C — Charging (without ventilation)(+6 V)
+    D — Charging (with ventilation)   (+3 V)
+    E — Power off / error             (0 V)
+    F — Fault (EVSE cannot deliver)   (-12 V)
     """
 
     A = auto()
@@ -102,7 +110,7 @@ class IEC61851State(Enum):
 
 
 class OCPPStatus(Enum):
-    """OCPP 1.6J / 2.0.1 connector status."""
+    """OCPP 1.6J / 2.0.1 connector status values for StatusNotification."""
 
     AVAILABLE = auto()
     PREPARING = auto()
@@ -121,7 +129,7 @@ class OCPPStatus(Enum):
 
 
 class AuthorizationStatus(Enum):
-    """Authorization result."""
+    """Result of an authorization attempt (RFID, QR, OCPP remote)."""
 
     NONE = auto()
     ACCEPTED = auto()
@@ -130,21 +138,43 @@ class AuthorizationStatus(Enum):
     BLOCKED = auto()
 
 
+class AuthorizationMethod(Enum):
+    """Method used for authorization."""
+
+    NONE = auto()
+    RFID = auto()
+    QR_CODE = auto()
+    LOCAL_WHITELIST = auto()
+    OCPP_REMOTE = auto()
+    PLUG_AND_CHARGE = auto()
+
+
 # =============================================================================
 # Charging Session
 # =============================================================================
 
 
 class SessionStatus(Enum):
-    """Charging session lifecycle."""
+    """
+    Charging session lifecycle states.
+
+    Aligned with OC-SDS-001 §14:
+
+        IDLE → CREATED → AUTHORIZED → PREPARING
+             → ACTIVE → SUSPENDED → STOPPING
+             → COMPLETED | FAILED | CANCELLED
+    """
 
     IDLE = auto()
-    STARTING = auto()
+    CREATED = auto()
+    AUTHORIZED = auto()
+    PREPARING = auto()
     ACTIVE = auto()
-    PAUSED = auto()
+    SUSPENDED = auto()
     STOPPING = auto()
-    FINISHED = auto()
+    COMPLETED = auto()
     FAILED = auto()
+    CANCELLED = auto()
 
 
 # =============================================================================
@@ -153,7 +183,7 @@ class SessionStatus(Enum):
 
 
 class VehicleStatus(Enum):
-    """Vehicle connection status."""
+    """Vehicle connection and charging readiness status."""
 
     DISCONNECTED = auto()
     CONNECTED = auto()
@@ -167,7 +197,7 @@ class VehicleStatus(Enum):
 
 
 class ContactorState(Enum):
-    """Power contactor."""
+    """Power contactor state."""
 
     OPEN = auto()
     CLOSED = auto()
@@ -179,7 +209,7 @@ class ContactorState(Enum):
 
 
 class LockState(Enum):
-    """Socket locking mechanism."""
+    """Socket locking mechanism state."""
 
     UNLOCKED = auto()
     LOCKING = auto()
@@ -194,7 +224,7 @@ class LockState(Enum):
 
 
 class MeterUnit(Enum):
-    """Energy meter units."""
+    """Electrical measurement units used by the Meter domain object."""
 
     WH = auto()
     KWH = auto()
@@ -202,6 +232,8 @@ class MeterUnit(Enum):
     AMPERE = auto()
     WATT = auto()
     KILOWATT = auto()
+    CELSIUS = auto()
+    HERTZ = auto()
 
 
 # =============================================================================
@@ -210,7 +242,12 @@ class MeterUnit(Enum):
 
 
 class FaultCode(Enum):
-    """General charger fault codes."""
+    """
+    Charger fault codes.
+
+    Reported by the Fault Manager and mapped to OCPP ErrorCode where
+    applicable.
+    """
 
     NONE = auto()
     EMERGENCY_STOP = auto()
@@ -229,13 +266,35 @@ class FaultCode(Enum):
     INTERNAL_ERROR = auto()
 
 
+class FaultSeverity(Enum):
+    """
+    Fault severity classification per OC-SDS-001 §16.
+
+    INFO     — Informational, no operational impact.
+    WARNING  — Non-critical, degraded operation possible.
+    ERROR    — Charger cannot continue normally.
+    CRITICAL — Immediate shutdown required.
+    """
+
+    INFO = auto()
+    WARNING = auto()
+    ERROR = auto()
+    CRITICAL = auto()
+
+
 # =============================================================================
-# Events
+# Event Categories
 # =============================================================================
 
 
-class EventType(Enum):
-    """System event types."""
+class EventCategory(Enum):
+    """
+    High-level event category classification.
+
+    Used for filtering and routing events within the platform.
+    Not to be confused with EventType in event_bus.py, which defines
+    the specific named events published on the EventBus.
+    """
 
     SYSTEM = auto()
     USER = auto()
@@ -252,7 +311,12 @@ class EventType(Enum):
 
 
 class LogLevel(IntEnum):
-    """Logging levels."""
+    """
+    Logging severity levels.
+
+    Aligned with Python's standard logging module values so that
+    LogLevel.INFO == logging.INFO, enabling direct interoperability.
+    """
 
     DEBUG = 10
     INFO = 20

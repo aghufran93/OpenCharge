@@ -1,3 +1,0 @@
-"""
-Configuration manager for OpenCharge.
-"""

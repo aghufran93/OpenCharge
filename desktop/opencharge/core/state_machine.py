@@ -1,21 +1,11 @@
 """
-Generic finite state machine implementation.
-"""
+OpenCharge Core — Finite State Machine.
 
-"""
-OpenCharge
-==========
+Controls the charger lifecycle and enforces all state transition rules.
+The StateMachine is the single gatekeeper for charger state — no
+component may bypass it to set state directly.
 
-File:
-    state_machine.py
-
-Description:
-    Finite State Machine (FSM) for the OpenCharge platform.
-
-The FSM is responsible for controlling the charger lifecycle and validating
-all state transitions. It provides a single source of truth for charger
-behaviour and is shared across the Desktop Simulator, IEC 61851,
-OCPP implementation, Raspberry Pi HMI, and STM32 firmware.
+Transition table per OC-SDS-001 §13.
 
 Author:
     Ahmed Ghufran
@@ -26,107 +16,109 @@ License:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Set
+from dataclasses import dataclass, field
 
 from .enums import ChargerState
-
-
-# =============================================================================
-# Exceptions
-# =============================================================================
-
-
-class InvalidStateTransitionError(Exception):
-    """Raised when an invalid state transition is requested."""
-
-
-# =============================================================================
-# State Machine
-# =============================================================================
+from .exceptions import InvalidStateTransitionError
 
 
 @dataclass
 class StateMachine:
     """
-    OpenCharge Finite State Machine.
+    OpenCharge Finite State Machine (FSM).
+
+    Validates every state transition against the approved rule table
+    from OC-SDS-001 §13. Invalid transitions raise
+    InvalidStateTransitionError rather than silently corrupting state.
 
     Example
     -------
     >>> fsm = StateMachine()
+    >>> fsm.transition_to(ChargerState.BOOTING)
     >>> fsm.transition_to(ChargerState.INITIALIZING)
     >>> fsm.transition_to(ChargerState.AVAILABLE)
-    >>> print(fsm.state)
+    >>> fsm.current_state
     ChargerState.AVAILABLE
     """
 
-    state: ChargerState = ChargerState.OFFLINE
+    state: ChargerState = field(default=ChargerState.OFFLINE)
 
-    # Allowed transitions
-    _transitions: Dict[ChargerState, Set[ChargerState]] = None
+    # Populated in __post_init__ — not part of the public constructor.
+    _transitions: dict[ChargerState, set[ChargerState]] = field(
+        default_factory=dict, init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         self._transitions = {
-
             ChargerState.OFFLINE: {
                 ChargerState.BOOTING,
             },
-
             ChargerState.BOOTING: {
                 ChargerState.INITIALIZING,
                 ChargerState.FAULTED,
             },
-
             ChargerState.INITIALIZING: {
                 ChargerState.AVAILABLE,
                 ChargerState.FAULTED,
             },
-
             ChargerState.AVAILABLE: {
                 ChargerState.OCCUPIED,
                 ChargerState.UNAVAILABLE,
                 ChargerState.FAULTED,
             },
-
+            # Vehicle connected — waiting for user to present credentials.
             ChargerState.OCCUPIED: {
-                ChargerState.PREPARING,
-                ChargerState.AVAILABLE,
+                ChargerState.AUTHORIZING,
+                ChargerState.AVAILABLE,   # vehicle unplugged before auth
                 ChargerState.FAULTED,
             },
-
+            # Authorization in progress (RFID, QR, OCPP remote).
+            ChargerState.AUTHORIZING: {
+                ChargerState.AUTHORIZED,  # credentials accepted
+                ChargerState.OCCUPIED,    # credentials rejected — retry
+                ChargerState.AVAILABLE,   # vehicle unplugged during auth
+                ChargerState.FAULTED,
+            },
+            # Credentials accepted — preparing to energize connector.
+            ChargerState.AUTHORIZED: {
+                ChargerState.PREPARING,
+                ChargerState.AVAILABLE,   # vehicle unplugged before contactor closes
+                ChargerState.FAULTED,
+            },
+            # Contactor closing sequence in progress.
             ChargerState.PREPARING: {
                 ChargerState.CHARGING,
                 ChargerState.FAULTED,
             },
-
+            # Energy transfer active.
             ChargerState.CHARGING: {
                 ChargerState.SUSPENDED_EV,
                 ChargerState.SUSPENDED_EVSE,
                 ChargerState.FINISHING,
                 ChargerState.FAULTED,
             },
-
+            # EV has paused charging (e.g. battery management, timer).
             ChargerState.SUSPENDED_EV: {
                 ChargerState.CHARGING,
                 ChargerState.FINISHING,
                 ChargerState.FAULTED,
             },
-
+            # EVSE has paused charging (e.g. load balancing, OCPP command).
             ChargerState.SUSPENDED_EVSE: {
                 ChargerState.CHARGING,
                 ChargerState.FINISHING,
                 ChargerState.FAULTED,
             },
-
+            # Charging ending — contactor opening, session closing.
             ChargerState.FINISHING: {
                 ChargerState.AVAILABLE,
                 ChargerState.FAULTED,
             },
-
+            # Administratively disabled.
             ChargerState.UNAVAILABLE: {
                 ChargerState.AVAILABLE,
             },
-
+            # Recovery paths from fault state.
             ChargerState.FAULTED: {
                 ChargerState.INITIALIZING,
                 ChargerState.OFFLINE,
@@ -139,7 +131,7 @@ class StateMachine:
 
     @property
     def current_state(self) -> ChargerState:
-        """Return current charger state."""
+        """Return the current charger state."""
         return self.state
 
     # -------------------------------------------------------------------------
@@ -148,56 +140,70 @@ class StateMachine:
 
     def can_transition(self, next_state: ChargerState) -> bool:
         """
-        Check if transition is allowed.
+        Return True if transitioning to next_state is permitted.
 
         Parameters
         ----------
         next_state:
-            Requested charger state.
-
-        Returns
-        -------
-        bool
-            True if transition is valid.
+            The requested target state.
         """
         return next_state in self._transitions.get(self.state, set())
 
     def transition_to(self, next_state: ChargerState) -> None:
         """
-        Change charger state.
+        Transition to next_state if permitted by the rule table.
+
+        Parameters
+        ----------
+        next_state:
+            The requested target state.
 
         Raises
         ------
         InvalidStateTransitionError
-            If transition is not permitted.
+            If the transition is not in the approved rule table.
         """
         if not self.can_transition(next_state):
             raise InvalidStateTransitionError(
-                f"Invalid transition: "
-                f"{self.state.name} -> {next_state.name}"
+                f"Invalid transition: {self.state.name} → {next_state.name}"
             )
-
         self.state = next_state
 
     # -------------------------------------------------------------------------
-    # Helper Methods
+    # Convenience predicates
     # -------------------------------------------------------------------------
 
-    def reset(self) -> None:
-        """Reset charger to OFFLINE state."""
-        self.state = ChargerState.OFFLINE
-
     def is_available(self) -> bool:
-        """Return True if charger is available."""
+        """Return True if the charger is ready to accept a vehicle."""
         return self.state == ChargerState.AVAILABLE
 
     def is_charging(self) -> bool:
-        """Return True if charging is active."""
+        """Return True if energy transfer is active."""
         return self.state == ChargerState.CHARGING
 
     def is_faulted(self) -> bool:
-        """Return True if charger is faulted."""
+        """Return True if the charger is in a fault state."""
         return self.state == ChargerState.FAULTED
+
+    def is_occupied(self) -> bool:
+        """Return True if a vehicle is connected."""
+        return self.state in {
+            ChargerState.OCCUPIED,
+            ChargerState.AUTHORIZING,
+            ChargerState.AUTHORIZED,
+            ChargerState.PREPARING,
+            ChargerState.CHARGING,
+            ChargerState.SUSPENDED_EV,
+            ChargerState.SUSPENDED_EVSE,
+            ChargerState.FINISHING,
+        }
+
+    def reset(self) -> None:
+        """Force-reset the FSM to OFFLINE without transition validation.
+
+        Only to be used during controlled system shutdown or factory reset.
+        """
+        self.state = ChargerState.OFFLINE
 
     def __str__(self) -> str:
         return self.state.name

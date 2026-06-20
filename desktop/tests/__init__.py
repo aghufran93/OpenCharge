@@ -1,0 +1,1 @@
+"""OpenCharge Desktop Test Suite."""
