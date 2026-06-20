@@ -1,3 +1,38 @@
+# OpenCharge Roadmap
+---
+
+# Document Information
+
+| Item | Details |
+|------|---------|
+| **Project** | OpenCharge |
+| **Document ID** | OC-DOC-XXX |
+| **Document Name** | *Document Name* |
+| **Version** | 1.0 |
+| **Status** | Active |
+| **Author** | Ahmed Ghufran |
+| **Role** | Founder & Lead System Architect |
+| **License** | Apache License 2.0 |
+| **Repository** | https://github.com/aghufran93/OpenCharge |
+| **Created** | June 2026 |
+| **Last Updated** | June 2026 |
+
+---
+
+# Revision History
+
+| Version | Date | Author | Description |
+|----------|------|--------|-------------|
+| 1.0 | June 2026 | Ahmed Ghufran | Initial Release |
+
+---
+
+# Table of Contents
+
+*Will be updated as the document evolves.*
+
+---
+
 # OpenCharge Vision
 
 > **Building the future of open-source AC EV charging through professional engineering, modular architecture, and community collaboration.**
