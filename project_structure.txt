@@ -1,0 +1,86 @@
+.
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows
+├── .gitignore
+├── ARCHITECTURE.md
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── ROADMAP.md
+├── VISION.md
+├── config
+├── desktop
+│   ├── app
+│   ├── core
+│   ├── gui
+│   ├── models
+│   ├── resources
+│   ├── services
+│   ├── simulator
+│   └── tests
+├── docs
+│   ├── api
+│   ├── architecture
+│   │   ├── adr
+│   │   ├── decisions
+│   │   └── diagrams
+│   ├── hardware
+│   ├── images
+│   ├── meeting-notes
+│   ├── protocols
+│   │   ├── can.md
+│   │   ├── iec61851.md
+│   │   ├── modbus.md
+│   │   ├── ocpp16j.md
+│   │   ├── ocpp201.md
+│   │   └── uart.md
+│   ├── releases
+│   ├── requirements
+│   │   ├── functional
+│   │   ├── hardware
+│   │   ├── non-functional
+│   │   └── software
+│   ├── software
+│   ├── standards
+│   └── templates
+│       ├── adr-template.md
+│       ├── api-template.md
+│       ├── architecture-template.md
+│       ├── design-template.md
+│       ├── hardware-template.md
+│       ├── meeting-template.md
+│       ├── release-template.md
+│       ├── requirement-template.md
+│       └── test-plan-template.md
+├── examples
+│   ├── desktop
+│   ├── firmware
+│   ├── modbus
+│   ├── ocpp
+│   └── uart
+├── firmware
+│   ├── drivers
+│   ├── middleware
+│   ├── protocols
+│   ├── stm32
+│   └── tests
+├── hardware
+│   ├── 3d-models
+│   ├── bom
+│   ├── datasheets
+│   ├── enclosure
+│   ├── gerber
+│   ├── kicad
+│   └── schematics
+├── logs
+├── project_structure.txt
+├── pyproject.toml
+├── requirements.txt
+├── scripts
+└── tools
+
+56 directories, 28 files
