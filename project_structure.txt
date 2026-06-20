@@ -1,0 +1,44 @@
+.
+├── .github
+│   └── workflows
+├── .gitignore
+├── ARCHITECTURE.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── ROADMAP.md
+├── VISION.md
+├── desktop
+│   ├── app
+│   ├── core
+│   ├── gui
+│   ├── models
+│   ├── resources
+│   ├── services
+│   ├── simulator
+│   └── tests
+├── docs
+│   ├── api
+│   ├── architecture
+│   ├── hardware
+│   ├── images
+│   ├── meeting-notes
+│   └── protocol
+├── firmware
+│   ├── drivers
+│   ├── middleware
+│   ├── stm32
+│   └── tests
+├── hardware
+│   ├── bom
+│   ├── enclosure
+│   ├── kicad
+│   └── schematics
+├── project_structure.txt
+├── pyproject.toml
+├── requirements.txt
+├── scripts
+└── tools
+
+31 directories, 11 files
