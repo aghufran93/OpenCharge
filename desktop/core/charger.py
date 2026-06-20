@@ -1,0 +1,3 @@
+"""
+OpenCharge Charger aggregate root.
+"""

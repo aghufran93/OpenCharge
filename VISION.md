@@ -1,13 +1,16 @@
 # OpenCharge Roadmap
 ---
+# OpenCharge Vision
+
+---
 
 # Document Information
 
 | Item | Details |
 |------|---------|
 | **Project** | OpenCharge |
-| **Document ID** | OC-DOC-XXX |
-| **Document Name** | *Document Name* |
+| **Document ID** | OC-DOC-002 |
+| **Document Name** | Project Vision |
 | **Version** | 1.0 |
 | **Status** | Active |
 | **Author** | Ahmed Ghufran |
